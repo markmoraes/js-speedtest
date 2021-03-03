@@ -24,7 +24,7 @@
 
 	var q = window.location.search
 	var bstart = 1
-	var tmax = 20
+	var tmax = 10
 	var tstart = (new Date()).getTime()
 	if (q != "") {
 		var v = Number(q.substr(1));
@@ -46,7 +46,7 @@
 	function dorequest() {
 		sTime = (new Date()).getTime()
 		//showprogress("Asking for "+b+" bytes", true)
-		oReq.open("GET", "/xx2/data", true)
+		oReq.open("GET", "/speedtest/data", true)
 		oReq.responseType = "blob"
 		oReq.setRequestHeader("Range", "bytes=0-"+(b*1000000-1))
 		oReq.send()
