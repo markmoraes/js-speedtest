@@ -6,6 +6,7 @@
 <script type="text/javascript">
 	// Simple download speed test in HTML and Javascript
 	// Mark Moraes
+	var debug = 0
 	// generic idiom to display progress messages
 	function showprogress(msg, append) {
 		if (console) {
@@ -26,6 +27,7 @@
 	var bstart = 1
 	var tmax = 10
 	var tstart = (new Date()).getTime()
+	var url = "/cgi-bin/genrandom"
 	if (q != "") {
 		var v = Number(q.substr(1));
 		if (v > 0) {
@@ -33,7 +35,9 @@
 		}
 	}
 	function startmsg() {
+		var t = (new Date()).getTime()
 		showprogress("Loading test data starting at "+bstart.toString()+" Mbytes, doubling till "+tmax.toString()+" seconds, please wait...", false);
+		if (debug) showprogress("startmsg "+(t-tstart), true)
 	}
 	// make sure startmsg runs asynchronously (now) while the
 	// download happens
@@ -41,17 +45,22 @@
 	
 	var i = 0
 	var sTime = 0
-	var b = bstart
+	var b = 0
 	var oReq = new XMLHttpRequest();
 	function dorequest() {
 		sTime = (new Date()).getTime()
-		//showprogress("Asking for "+b+" bytes", true)
-		oReq.open("GET", "/speedtest/data", true)
+		if (b == 0) {
+			bmax=0
+			b = bstart
+		} else {
+			bmax = (b*1000000-1)
+			b = b*2
+		}
+		if (debug) showprogress("Asking for 0-"+bmax+" bytes at "+(sTime-tstart), true)
+		oReq.open("GET", url, true)
 		oReq.responseType = "blob"
-		oReq.setRequestHeader("Range", "bytes=0-"+(b*1000000-1))
+		oReq.setRequestHeader("Range", "bytes=0-"+bmax)
 		oReq.send()
-		b = b*2
-		i = i+1
 	}
 	oReq.onload = function(oEvent) {
         	var eTime = (new Date()).getTime()
@@ -69,6 +78,7 @@
 	  	} else {
 			showprogress(i.toString()+": Download failed with status "+this.status, true)
 	  	}
+		i = i+1
 	};
 	dorequest()
 </script>
