@@ -1,0 +1,8 @@
+Need a large file (ideally non-compressible random junk)
+called data in the same dir as this html.
+
+randfill -n 10000000 data
+
+or
+
+dd if=/dev/urandom of=data bs=1M count=320

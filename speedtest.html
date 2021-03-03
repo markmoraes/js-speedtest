@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+<meta charset="utf-8">
+<title>Download speed test</title>
+<script type="text/javascript">
+	// Simple download speed test in HTML and Javascript
+	// Mark Moraes
+	// generic idiom to display progress messages
+	function showprogress(msg, append) {
+		if (console) {
+			console.log(msg)
+		}
+		var p = document.getElementById("progress")
+		if (p) {
+			if (append) {
+				p.innerHTML = p.innerHTML + "<br/>" + msg
+			} else {
+				p.innerHTML = msg
+			}
+			p.style.display = "block"
+		}
+	};
+
+	var q = window.location.search
+	var bstart = 1
+	var tmax = 20
+	var tstart = (new Date()).getTime()
+	if (q != "") {
+		var v = Number(q.substr(1));
+		if (v > 0) {
+			n = v
+		}
+	}
+	function startmsg() {
+		showprogress("Loading test data starting at "+bstart.toString()+" Mbytes, doubling till "+tmax.toString()+" seconds, please wait...", false);
+	}
+	// make sure startmsg runs asynchronously (now) while the
+	// download happens
+	window.addEventListener('load',startmsg)
+	
+	var i = 0
+	var sTime = 0
+	var b = bstart
+	var oReq = new XMLHttpRequest();
+	function dorequest() {
+		sTime = (new Date()).getTime()
+		//showprogress("Asking for "+b+" bytes", true)
+		oReq.open("GET", "/xx2/data", true)
+		oReq.responseType = "blob"
+		oReq.setRequestHeader("Range", "bytes=0-"+(b*1000000-1))
+		oReq.send()
+		b = b*2
+		i = i+1
+	}
+	oReq.onload = function(oEvent) {
+        	var eTime = (new Date()).getTime()
+        	var duration = (eTime - sTime)
+		if (this.status==200 || this.status == 206) { 
+			var bits = this.response.size*8
+			var kbps = (bits/duration).toFixed(2)
+			var mbps = (bits/1000./duration).toFixed(2)
+			showprogress(i.toString()+": Downloaded "+this.response.size/1000000+" Mbytes in "+duration+" ms at "+kbps+" Kbps, "+mbps+" Mbps", true)
+			if (eTime - tstart < tmax*1000) {
+				dorequest()
+			} else {
+				showprogress("Done.", true)
+			}
+	  	} else {
+			showprogress(i.toString()+": Download failed with status "+this.status, true)
+	  	}
+	};
+	dorequest()
+</script>
+</head>
+<body>
+<div id="progress">If you see this for very long, Javascript might be turned off</div>
+</body>
+</html>
