@@ -1,0 +1,7 @@
+genrandom
+*.o
+*~
+#*
+make.log
+oo*
+xx*
