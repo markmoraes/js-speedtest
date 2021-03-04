@@ -43,15 +43,16 @@
 	// download happens
 	window.addEventListener('load',startmsg)
 	
-	var i = 0
+	var i = -2
 	var sTime = 0
+	var rttbase = 0
 	var b = 0
 	var oReq = new XMLHttpRequest();
 	function dorequest() {
 		sTime = (new Date()).getTime()
-		if (b == 0) {
+		if (i < 0) {
 			bmax=0
-			b = bstart
+			if (i == -1) b = bstart
 		} else {
 			bmax = (b*1000000-1)
 			b = b*2
@@ -64,12 +65,13 @@
 	}
 	oReq.onload = function(oEvent) {
         	var eTime = (new Date()).getTime()
-        	var duration = (eTime - sTime)
+		var dt = (eTime - sTime)
+        	var duration = dt - rttbase
 		if (this.status==200 || this.status == 206) { 
 			var bits = this.response.size*8
 			var kbps = (bits/duration).toFixed(2)
 			var mbps = (bits/1000./duration).toFixed(2)
-			showprogress(i.toString()+": Downloaded "+this.response.size/1000000+" Mbytes in "+duration+" ms at "+kbps+" Kbps, "+mbps+" Mbps", true)
+			showprogress(i.toString()+": Downloaded "+this.response.size/1000000+" Mbytes in "+dt+" ms, "+duration+" ms over round-trip baseline, "+kbps+" Kbps, "+mbps+" Mbps", true)
 			if (eTime - tstart < tmax*1000) {
 				dorequest()
 			} else {
@@ -78,6 +80,10 @@
 	  	} else {
 			showprogress(i.toString()+": Download failed with status "+this.status, true)
 	  	}
+		if (i == 0) {
+			rttbase = duration;
+			showprogress("Setting round-trip baseline to "+rttbase+" ms", true)
+		}
 		i = i+1
 	};
 	dorequest()
