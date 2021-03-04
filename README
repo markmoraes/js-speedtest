@@ -7,7 +7,8 @@ Use 'make' to compile genrandom, install it in /var/www/cgi-bin/ or wherever
 
 Alternatively, if you have a big file (e.g. tar, ISO, mp4) on your web
 server already, or on another web server that you want to measure 
-bandwidth to, edit speedtest.html with that name.
+bandwidth to, edit speedtest.html with that name. With files, there
+is some risk of browser caching affecting the timing.
 
 Copy speedtest.html to the web server and then point your browser at it.
 You should see something like:
