@@ -1,8 +1,30 @@
-Need a large file (ideally non-compressible random junk)
-called data in the same dir as this html.
+Web server code and Javascript to do simple network bandwidth/round-trip
+timing using a browser to web server.
 
-randfill -n 10000000 data
+Use 'make' to compile genrandom, install it in /var/www/cgi-bin/ or wherever
+(and under whatever extension/path) your web server prefers CGI programs.
+(e.g. some may prefer the executable to be called genrandom.cgi)
 
-or
+Alternatively, if you have a big file (e.g. tar, ISO, mp4) on your web
+server already, or on another web server that you want to measure 
+bandwidth to, edit speedtest.html with that name.
 
-dd if=/dev/urandom of=data bs=1M count=320
+Copy speedtest.html to the web server and then point your browser at it.
+You should see something like:
+
+Loading test data starting at 1 Mbytes, doubling till 10 seconds, please wait...
+0: Downloaded 0.000001 Mbytes in 95 ms at 0.08 Kbps, 0.00 Mbps
+1: Downloaded 1 Mbytes in 74 ms at 108108.11 Kbps, 108.11 Mbps
+2: Downloaded 2 Mbytes in 40 ms at 400000.00 Kbps, 400.00 Mbps
+3: Downloaded 4 Mbytes in 88 ms at 363636.36 Kbps, 363.64 Mbps
+4: Downloaded 8 Mbytes in 80 ms at 800000.00 Kbps, 800.00 Mbps
+5: Downloaded 16 Mbytes in 124 ms at 1032258.06 Kbps, 1032.26 Mbps
+6: Downloaded 32 Mbytes in 249 ms at 1028112.45 Kbps, 1028.11 Mbps
+7: Downloaded 64 Mbytes in 463 ms at 1105831.53 Kbps, 1105.83 Mbps
+8: Downloaded 128 Mbytes in 934 ms at 1096359.74 Kbps, 1096.36 Mbps
+9: Downloaded 256 Mbytes in 1611 ms at 1271260.09 Kbps, 1271.26 Mbps
+10: Downloaded 512 Mbytes in 3372 ms at 1214709.37 Kbps, 1214.71 Mbps
+11: Downloaded 1024 Mbytes in 7565 ms at 1082881.69 Kbps, 1082.88 Mbps
+Done.
+
+Mark Moraes.

@@ -1,13 +1,17 @@
 /*
  * CGI program to generate random bytes of a length specified
- * by the Range:  header in the HTTP request that invoked this
+ * by the Range:  header in the HTTP request that invoked this.
+ * Should work on any relatively modern C compiler (needs working
+ * inttypes, which may rule out MSVC/Visual C)
  */
+/* Generates ~4GiB/sec on Intel(R) Core(TM) i7-7500U CPU @ 2.70GHz */
 /* Mark Moraes */
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
 #include <inttypes.h>
+#include <time.h>
 
 /**** Downloaded 20210303 from https://xorshift.di.unimi.it/splitmix64.c ****/
 /*  Written in 2015 by Sebastiano Vigna (vigna@acm.org)
@@ -28,18 +32,22 @@ See <http://creativecommons.org/publicdomain/zero/1.0/>. */
 static uint64_t x; /* The state can be seeded with any value. */
 
 static inline uint64_t next() {
-    uint64_t z = (x += 0x9e3779b97f4a7c15ull);
-    z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9ull;
-    z = (z ^ (z >> 27)) * 0x94d049bb133111ebull;
+    uint64_t z = (x += 0x9e3779b97f4a7c15ul);
+    z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9ul;
+    z = (z ^ (z >> 27)) * 0x94d049bb133111ebul;
     return z ^ (z >> 31);
 }
 /**** End of https://xorshift.di.unimi.it/splitmix64.c ****/
 
+#define BSIZE 8192
+
 int main(int argc, char **argv)
 {
-    uint64_t n0, n1, n, i, nb, wb = 0;
+    uint64_t n0, n1, n, i, j, jmax, nb, wb = 0;
     const char *cp = getenv("HTTP_RANGE");
-    const char *timing = getenv("GENRANDOM_TIMING");
+    const char *timing = getenv("GENRANDOM_TIMING"); /* no output if set */
+    uint64_t buf[BSIZE];
+    clock_t tstart = clock();
 
     if (sizeof(uint64_t) != 8) {
 	/* check we are dealing with 64-bits! */
@@ -57,27 +65,38 @@ int main(int argc, char **argv)
     else
         n = (n0 - n1) + 1;
 
-    if (timing)
-	printf("Content-Type: text/plain\n\n");
-    else
+    jmax = BSIZE;
+    nb = sizeof(uint64_t)*jmax;
+    if (timing) {
+	printf("Content-Type: text/plain\n\njmax=%" PRIu64 " nb=%" PRIu64 "\n",
+	    jmax, nb);
+    } else {
 	printf("Content-Type: application/octet-stream\nCache-Control: no-store\nContent-Length: %" PRIu64 "\n\n", n);
-
-    nb = sizeof(uint64_t);
-    for (i = 0; i < n; i += nb) {
-	uint64_t v = next();
-	if (i + nb > n)
-	    nb = n - i;
-
-	if (timing) {
-	    wb ^= v;
-	} if ((wb = fwrite((void *)&v, 1, nb, stdout)) != nb) {
-	    fprintf(stderr, "%s: Error: fwrite returned %" PRIu64 " (expected %" PRIu64 ")\n",
-		    argv[0], wb, nb);
-	    return 0; /* no point upsetting httpd by returning 1? */
-	};
     }
-    if (timing)
-	printf("i=%" PRIu64 " wb=%" PRIu64 "\n", i,wb);
+
+    for (i = 0; i < n; i += nb) {
+	if (i + sizeof(buf) > n) {
+	    nb = n - i;
+	    jmax = nb/sizeof(buf[0]) + 1;
+	    if (timing) printf("truncated jmax to %" PRIu64 "\n", jmax);
+	}
+
+	for (j = 0; j < jmax; j++)
+	    buf[j] = next();
+
+	if (!timing) {
+	    if ((wb = fwrite((void *)buf, 1, nb, stdout)) != nb) {
+		fprintf(stderr, "%s: Error: fwrite returned %" PRIu64 " (expected %" PRIu64 ")\n",
+			argv[0], wb, nb);
+		return 0; /* no point upsetting httpd by returning 1? */
+	    }
+	}
+    }
+    if (timing) {
+	double dt = ((double)(clock() - tstart))/CLOCKS_PER_SEC;
+	printf("%" PRIu64 " bytes in %.2g secs, %g MiB/sec\n", i ,
+	       dt, i/dt/(1024.*1024.));
+    }
     if (fflush(stdout) != 0 || ferror(stdout)) {
 	    fprintf(stderr, "%s: Error: fflush or ferror failed: %s\n",
 		    argv[0], strerror(errno));
