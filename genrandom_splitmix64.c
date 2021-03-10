@@ -71,8 +71,14 @@ int main(int argc, char **argv)
 	printf("Content-Type: text/plain\n\njmax=%" PRIu64 " nb=%" PRIu64 "\n",
 	    jmax, nb);
     } else {
-	printf("Content-Type: application/octet-stream\nCache-Control: no-store\nContent-Length: %" PRIu64 "\n\n", n);
-    }
+	printf("\
+Content-Type: application/octet-stream\n\
+Cache-Control: no-store\n\
+Cross-Origin-Opener-Policy: same-origin\n\
+Cross-Origin-Embedder-Policy: require-corp\n\
+Content-Length: %" PRIu64 "\n\
+\n", n);
+}
 
     for (i = 0; i < n; i += nb) {
 	if (i + sizeof(buf) > n) {

@@ -25,8 +25,8 @@
 
 	var q = window.location.search
 	var bstart = 1
-	var tmax = 10
-	var tstart = (new Date()).getTime()
+	var tmax = 1000 // max milliseconds for a data transfer
+	var tstart = performance.now()
 	var url = "/cgi-bin/genrandom"
 	if (q != "") {
 		var v = Number(q.substr(1));
@@ -35,8 +35,8 @@
 		}
 	}
 	function startmsg() {
-		var t = (new Date()).getTime()
-		showprogress("Loading test data starting at "+bstart.toString()+" Mbytes, doubling till "+tmax.toString()+" seconds, please wait...", false);
+		var t = performance.now()
+		showprogress("Loading test data starting at "+bstart.toString()+" Mbytes, doubling till transfer takes "+tmax.toString()+" ms, please wait...", false);
 		if (debug) showprogress("startmsg "+(t-tstart), true)
 	}
 	// make sure startmsg runs asynchronously (now) while the
@@ -49,7 +49,7 @@
 	var b = 0
 	var oReq = new XMLHttpRequest();
 	function dorequest() {
-		sTime = (new Date()).getTime()
+		sTime = performance.now()
 		if (i < 0) {
 			bmax=0
 			if (i == -1) b = bstart
@@ -61,18 +61,22 @@
 		oReq.open("GET", url, true)
 		oReq.responseType = "blob"
 		oReq.setRequestHeader("Range", "bytes=0-"+bmax)
+		oReq.timeout = tmax*5;
 		oReq.send()
 	}
+	oReq.ontimeout = function(oEvent) {
+		showprogress("Request timed out.\n", true)
+	}
 	oReq.onload = function(oEvent) {
-        	var eTime = (new Date()).getTime()
+		var eTime = performance.now()
 		var dt = (eTime - sTime)
         	var duration = dt - rttbase
+		if (debug) showprogress("event "+oEvent.toString()+" this "+this.toString(),true)
 		if (this.status==200 || this.status == 206) { 
 			var bits = this.response.size*8
-			var kbps = (bits/duration).toFixed(2)
-			var mbps = (bits/1000./duration).toFixed(2)
-			showprogress(i.toString()+": Downloaded "+this.response.size/1000000+" Mbytes in "+dt+" ms, "+duration+" ms over round-trip baseline, "+kbps+" Kbps, "+mbps+" Mbps", true)
-			if (eTime - tstart < tmax*1000) {
+			var mbps = (bits/1000./duration).toFixed(3)
+			showprogress(i.toString()+": Downloaded "+this.response.size/1000000+" Mbytes in "+dt+" ms, "+duration+" ms over round-trip baseline, "+mbps+" Mbps", true)
+			if (duration < tmax) {
 				dorequest()
 			} else {
 				showprogress("Done.", true)
